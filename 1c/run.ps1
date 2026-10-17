@@ -33,7 +33,7 @@ if ($Snapshot) { $cParam += ";СНИМОК=" + [IO.Path]::GetFullPath($Snapshot)
 if ($ConfirmTestCopy) { $cParam += ";ПОДТВЕРЖДЕНИЕ=ТЕСТОВАЯ_КОПИЯ" }
 if ($Repeat) { $cParam += ";ПОВТОР=ДА" }
 if ($Objects) { $cParam += ";ОБЪЕКТЫ=$Objects" }
-$cmdArgs = @("ENTERPRISE", "/F`"$BasePath`"", "/DisableStartupDialogs", "/Execute`"$Epf`"",
+$cmdArgs = @("ENTERPRISE", "/F`"$BasePath`"", "/DisableStartupDialogs", "/DisableUnsafeActionProtection", "/Execute`"$Epf`"",
     "/C`"$cParam`"")
 if ($User) { $cmdArgs += "/N`"$User`"" }
 if ($Password) { $cmdArgs += "/P`"$Password`"" }
