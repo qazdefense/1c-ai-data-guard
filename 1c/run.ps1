@@ -16,6 +16,7 @@ param(
     [string]$Snapshot = "",
     [switch]$ConfirmTestCopy,
     [switch]$Repeat,
+    [string]$Objects = "",
     [string]$Epf = "",
     [string]$Platform = "C:\Program Files\1cv8\8.3.27.1989\bin\1cv8.exe",
     [int]$TimeoutSec = 900
@@ -31,6 +32,7 @@ if ($Secret) { $cParam += ";СЕКРЕТ=$Secret" }
 if ($Snapshot) { $cParam += ";СНИМОК=" + [IO.Path]::GetFullPath($Snapshot) }
 if ($ConfirmTestCopy) { $cParam += ";ПОДТВЕРЖДЕНИЕ=ТЕСТОВАЯ_КОПИЯ" }
 if ($Repeat) { $cParam += ";ПОВТОР=ДА" }
+if ($Objects) { $cParam += ";ОБЪЕКТЫ=$Objects" }
 $cmdArgs = @("ENTERPRISE", "/F`"$BasePath`"", "/DisableStartupDialogs", "/Execute`"$Epf`"",
     "/C`"$cParam`"")
 if ($User) { $cmdArgs += "/N`"$User`"" }
