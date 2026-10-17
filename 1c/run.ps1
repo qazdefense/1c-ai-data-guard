@@ -1,7 +1,7 @@
 ﻿<#
 Запуск обработки «Обезличивание данных» на файловой базе (ENTERPRISE /Execute), результат - в файл отчета.
 Пример:
-  .\run.ps1 -BasePath D:\BASES\1C_BK_test -User Администратор -Profile KZ -Mode ИНВЕНТАРИЗАЦИЯ -Report report.txt
+  .\run.ps1 -BasePath D:\Bases\copy_test -User Admin -Profile KZ -Mode ИНВЕНТАРИЗАЦИЯ -Report report.txt
 Запуск на копии базы, не на рабочей. Таймаут обязателен: клиент, зависший на диалоге, снимается принудительно.
 #>
 param(
