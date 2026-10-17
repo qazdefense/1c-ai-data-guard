@@ -19,6 +19,7 @@ param(
     [string]$Objects = "",
     [string]$Keep = "",
     [string]$Users = "",
+    [string]$File = "",
     [string]$Epf = "",
     [string]$Platform = "C:\Program Files\1cv8\8.3.27.1989\bin\1cv8.exe",
     [int]$TimeoutSec = 900
@@ -37,6 +38,7 @@ if ($Repeat) { $cParam += ";ПОВТОР=ДА" }
 if ($Objects) { $cParam += ";ОБЪЕКТЫ=$Objects" }
 if ($Keep) { $cParam += ";ОСТАВИТЬ=$Keep" }
 if ($Users) { $cParam += ";ПОЛЬЗОВАТЕЛИ=$Users" }
+if ($File) { $cParam += ";ФАЙЛ=" + [IO.Path]::GetFullPath($File) }
 $cmdArgs = @("ENTERPRISE", "/F`"$BasePath`"", "/DisableStartupDialogs", "/DisableUnsafeActionProtection", "/Execute`"$Epf`"",
     "/C`"$cParam`"")
 if ($User) { $cmdArgs += "/N`"$User`"" }

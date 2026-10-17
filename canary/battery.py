@@ -26,9 +26,12 @@ def fake_upstream(rows: list[dict[str, Any]], seen: list[str]) -> Callable[[str]
         flt = q.get("$filter")
         if flt:
             for clause in re.split(r"\s+and\s+", flt):
-                m = re.match(r"^(\S+) eq '(.*)'$", clause.strip())
+                m = re.match(r"^(\S+) (eq|ne|ge|gt|le|lt) '(.*)'$", clause.strip())
                 if m:
-                    data = [r for r in data if str(r.get(m.group(1))) == m.group(2).replace("''", "'")]
+                    field, op, lit = m.group(1), m.group(2), m.group(3).replace("''", "'")
+                    cmp = {"eq": lambda a, b: a == b, "ne": lambda a, b: a != b, "ge": lambda a, b: a >= b,
+                           "gt": lambda a, b: a > b, "le": lambda a, b: a <= b, "lt": lambda a, b: a < b}[op]
+                    data = [r for r in data if cmp(str(r.get(field)), lit)]
         top = int(q.get("$top", "100"))
         if parts.path.endswith("/$count"):
             return 200, str(len(data)).encode("ascii")
@@ -44,6 +47,7 @@ def attacks(rows: list[dict[str, Any]], token: str = "") -> list[tuple[str, str,
     name = rows[0]["Description"]
     q = urllib.parse.quote
     return [
+        ("канарейки по коду", "GET", f"/{e}?$filter=" + urllib.parse.quote("Code ge 'CANDG' and Code lt 'CANDH'")),
         ("список", "GET", f"/{e}"),
         ("список с top в миллиард", "GET", f"/{e}?$top=1000000000"),
         ("количество", "GET", f"/{e}/$count"),
@@ -77,7 +81,7 @@ def _ascii(target: str) -> str:
 
 
 def run_battery(call: Call, rows: list[dict[str, Any]]) -> list[tuple[str, int, str]]:
-    first_status, first_text = call("GET", f"/{urllib.parse.quote(ENTITY)}")
+    first_status, first_text = call("GET", f"/{urllib.parse.quote(ENTITY)}?$filter=" + urllib.parse.quote("Code ge 'CANDG' and Code lt 'CANDH'"))
     token = ""
     if first_status == 200:
         m = re.search(r"\[\[iin:[A-Z2-7]{10}\]\]", first_text)

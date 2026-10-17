@@ -25,7 +25,7 @@ class GateBehaviourTests(unittest.TestCase):
         status, body = self.get(f"/{E}")
         self.assertEqual(status, 200)
         row = body["value"][0]
-        self.assertEqual(set(row), {"Ref_Key", "Description", IIN_FIELD, "Number"})
+        self.assertEqual(set(row), {"Ref_Key", "Code", "Description", IIN_FIELD, "Number"})
         self.assertRegex(row[IIN_FIELD], r"^\[\[iin:[A-Z2-7]{10}\]\]$")
         self.assertRegex(row["Description"], r"^\[\[name:[A-Z2-7]{10}\]\]$")
         self.assertNotIn(self.data["rows"][0][IIN_FIELD], row["Number"])  # страж в поле pass

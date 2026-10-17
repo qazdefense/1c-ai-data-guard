@@ -10,7 +10,7 @@ from .canaries import make_canaries
 
 POLICY = {
     "profile": "kz", "max_top": 50,
-    "entities": {ENTITY: {"fields": {"Ref_Key": "pass", "Description": "token:name", IIN_FIELD: "token:iin", "Number": "pass"}}},
+    "entities": {ENTITY: {"fields": {"Ref_Key": "pass", "Code": "pass", "Description": "token:name", IIN_FIELD: "token:iin", "Number": "pass"}}},
 }
 
 

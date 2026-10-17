@@ -31,6 +31,7 @@ def make_canaries(profile: str = "kz", n: int = 12, seed: int = 20261018) -> dic
             id_cls = "inn"
         row = {
             "Ref_Key": str(uuid.UUID(int=rng.getrandbits(128), version=4)),
+            "Code": f"CANDG{i + 1:04d}",
             "Description": name,
             "ИдентификационныйКодЛичности": ident,
             "Телефон": phone,
