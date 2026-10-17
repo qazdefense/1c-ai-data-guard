@@ -1,0 +1,36 @@
+{
+  "profile": "ru",
+  "max_top": 200,
+  "upstream": {
+    "base_url": "http://localhost/<публикация>/odata/standard.odata",
+    "user_env": "ODATA_USER",
+    "password_env": "ODATA_PASSWORD"
+  },
+  "entities": {
+    "Catalog_Контрагенты": {
+      "fields": {
+        "Ref_Key": "pass",
+        "Code": "pass",
+        "DeletionMark": "pass",
+        "Description": "token:name",
+        "ИНН": "token:inn",
+        "КПП": "token:kpp"
+      }
+    },
+    "Catalog_ФизическиеЛица": {
+      "fields": {
+        "Ref_Key": "pass",
+        "Description": "token:name",
+        "ИНН": "token:inn",
+        "СтраховойНомерПФР": "token:snils"
+      }
+    },
+    "Catalog_Номенклатура": {
+      "fields": {
+        "Ref_Key": "pass",
+        "Code": "pass",
+        "Description": "pass"
+      }
+    }
+  }
+}

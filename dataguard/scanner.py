@@ -111,11 +111,18 @@ class Tokenizer:
         self.profile = profile
         self._known: list[tuple[str, str]] = []
         self._known_re: Optional[re.Pattern] = None
+        self._reveal: dict[str, str] = {}
         self.add_known(known)
 
     def token(self, cls: str, value: str) -> str:
         digest = hmac.new(self._secret, f"{cls}\x00{_normalize(cls, value)}".encode("utf-8"), hashlib.sha256).digest()
-        return f"[[{cls}:{base64.b32encode(digest)[:10].decode('ascii')}]]"
+        token = f"[[{cls}:{base64.b32encode(digest)[:10].decode('ascii')}]]"
+        self._reveal[token] = str(value)
+        return token
+
+    def resolve(self, token: str) -> Optional[str]:
+        """Исходное значение токена, выданного шлюзом в этом сеансе; для неизвестного токена None (перебор по токенам невозможен)."""
+        return self._reveal.get(token)
 
     def add_known(self, items: Iterable[tuple[str, str]]) -> None:
         """Значения, найденные в базе заранее (ФИО, названия организаций): ловятся в свободном тексте без шаблона."""
