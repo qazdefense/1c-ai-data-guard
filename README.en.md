@@ -43,7 +43,8 @@ If the platform asks "Allow opening this file?", run the `ЗАЩИТА` mode onc
 2. **Write a policy** starting from `gateway/examples/kz.policy.json` or `ru.policy.json`; set `upstream.base_url`. Personal fields are `token:<class>`, the rest `pass`. Whatever is not in the policy the AI never sees.
 3. **Run the gateway** under a separate Windows account (`DATAGUARD_SECRET`, `ODATA_USER`, `ODATA_PASSWORD`, optional `DATAGUARD_CLIENT_TOKEN`): `py -m gateway.server --policy my.policy.json --port 8790`.
 4. **Check it before connecting AI**: `py -m canary --selftest`, then canaries against your live database (see "Leak check").
-5. **Connect the AI client**: point any OData MCP server or script at `http://127.0.0.1:8790` instead of 1C (e.g. `http://127.0.0.1:8790/Catalog_Контрагенты?$top=10`), with the `X-Gate-Token` header if a client key is set.
+5. **Connect the AI client**: point any OData MCP server or script at `http://127.0.0.1:8790` instead of 1C (e.g. `http://127.0.0.1:8790/Catalog_Контрагенты?$top=10`), with the `X-Gate-Token` header if a client key is set. Page through large sets **with `$orderby=Ref_Key`**: without ordering 1C returns rows in a different order on each page, so some rows repeat and others are lost.
+6. **Reveal for humans.** The AI answers with tokens (`[[name:M4T2Q9XZ7K]] - 10% of purchases`). A person with access to the gateway turns the answer back into names where the gateway runs, with the same secret: `py -m gateway.reveal --policy my.policy.json --in answer.txt --out revealed.txt`. Tokens cannot be inverted without the secret; values are found by scanning the policy fields of that class. The AI session has no access to this tool.
 
 ## Core (`dataguard/`)
 
