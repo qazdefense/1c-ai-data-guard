@@ -11,8 +11,38 @@ Main idea: what is safe is not data that is masked, but data the model never had
 |---|---|---|
 | 1. Depersonalized copy | A 1C external data processor replaces personal data in a copy of the database with synthetic values that keep valid check digits. The agent works with the copy | works: KZ profile verified on an Accounting for Kazakhstan 3.0 copy, RU profile on an Accounting 3.0 copy |
 | 2. Gateway for live data | A proxy between the AI client and 1C OData: allow-list of entities and fields, token substitution, no filters by real values | works (`gateway/`), verified against a stub source and against live 1C OData through IIS |
-| 3. Leak check | "Canaries": known fake values planted in the source, a 25-attack battery against the gateway, then a search for every canary in responses and logs | works (`canary/`) |
+| 3. Leak check | "Canaries": known fake values planted in the source, an attack battery (26 attacks on live OData) against the gateway, then a search for every canary in responses and logs | works (`canary/`) |
 | Core | Validation and generation of identifiers, search and replacement in text | `dataguard/` |
+
+## Quick start
+
+Requirements: Windows, 1C:Enterprise 8.3 (tested on 8.3.27), Python 3.10+ with no extra packages, PowerShell.
+
+### Scenario 1. A depersonalized copy for development and tests
+
+1. **Copy the file database** into a folder whose path contains `_test` (e.g. `D:\Bases\buh_test`); without `_test` the processor replaces nothing. Do not copy the event log.
+2. **Build the processor** from `1c/src` (any file database will do, even an empty one):
+   ```
+   1cv8.exe DESIGNER /F"<any database>" /DisableStartupDialogs /LoadExternalDataProcessorOrReportFromFiles "1c\src\ОбезличиваниеДанных.xml" "1c\build\ОбезличиваниеДанных.epf"
+   ```
+3. **Inventory** (read only, no real values in the report): `.\1c\run.ps1 -BasePath D:\Bases\buh_test -User Admin -Profile KZ -Mode ИНВЕНТАРИЗАЦИЯ -Report inventory.txt`. `KZ` is Accounting for Kazakhstan, `RU` is Accounting (Russia). Add customized attributes missing from `1c/rules/<profile>.txt` to your copy of the rules.
+4. **Depersonalize** (secret: any string of 16+ characters; the snapshot holds hashes, not values):
+   ```
+   .\1c\run.ps1 -BasePath D:\Bases\buh_test -User Admin -Profile KZ -Mode ВЫПОЛНЕНИЕ -ConfirmTestCopy `
+       -Rules 1c\rules\kz.txt -Secret "<secret>" -Snapshot snapshot.txt -Report run.txt -TimeoutSec 7200
+   ```
+5. **Verify**: modes `ПРОВЕРКА` (`-Rules ... -Snapshot snapshot.txt`) and `ОСТАТКИ`. Then hand the copy to the AI agent and delete the snapshot and the secret.
+
+For another platform version pass `-Platform "C:\Program Files\1cv8\<version>\bin\1cv8.exe"`.
+If the platform asks "Allow opening this file?", run the `ЗАЩИТА` mode once (copies only).
+
+### Scenario 2. AI reads a live database through the gateway
+
+1. **Publish OData** of the database (IIS or Apache), enable the needed objects in the standard OData interface, create a read-only 1C user for the gateway.
+2. **Write a policy** starting from `gateway/examples/kz.policy.json` or `ru.policy.json`; set `upstream.base_url`. Personal fields are `token:<class>`, the rest `pass`. Whatever is not in the policy the AI never sees.
+3. **Run the gateway** under a separate Windows account (`DATAGUARD_SECRET`, `ODATA_USER`, `ODATA_PASSWORD`, optional `DATAGUARD_CLIENT_TOKEN`): `py -m gateway.server --policy my.policy.json --port 8790`.
+4. **Check it before connecting AI**: `py -m canary --selftest`, then canaries against your live database (see "Leak check").
+5. **Connect the AI client**: point any OData MCP server or script at `http://127.0.0.1:8790` instead of 1C (e.g. `http://127.0.0.1:8790/Catalog_Контрагенты?$top=10`), with the `X-Gate-Token` header if a client key is set.
 
 ## Core (`dataguard/`)
 
