@@ -46,6 +46,18 @@ class GateBehaviourTests(unittest.TestCase):
         self.assertEqual((status, len(body["value"])), (200, 1))
         self.assertTrue(any(self.data["rows"][0][IIN_FIELD] in urllib.parse.unquote(s) for s in self.seen))
 
+    def test_reveal_restores_values_only_with_gateway_secret(self):
+        from gateway.reveal import reveal
+        row = self.get(f"/{E}")[1]["value"][0]
+        answer = "Крупнейший покупатель %s, ИИН %s, и [[name:AAAAAAAAAA]]" % (row["Description"], row[IIN_FIELD])
+        upstream = fake_upstream(self.data["rows"], [])
+        text, missing = reveal(answer, Policy(POLICY), self.gate.tokenizer._secret, upstream)
+        self.assertIn(self.data["rows"][0]["Description"], text)
+        self.assertIn(self.data["rows"][0][IIN_FIELD], text)
+        self.assertEqual(missing, {"[[name:AAAAAAAAAA]]"})
+        other, _ = reveal(answer, Policy(POLICY), b"another-secret-0123456789ab", upstream)
+        self.assertEqual(other, answer)
+
     def test_status_codes_of_attacks(self):
         expected = {
             "поле вне политики": 400, "телефон вне политики": 400, "фильтр по реальному ИИН": 400,

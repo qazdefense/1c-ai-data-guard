@@ -31,7 +31,8 @@ Requirements: Windows, 1C:Enterprise 8.3 (tested on 8.3.27), Python 3.10+ with n
    .\1c\run.ps1 -BasePath D:\Bases\buh_test -User Admin -Profile KZ -Mode ВЫПОЛНЕНИЕ -ConfirmTestCopy `
        -Rules 1c\rules\kz.txt -Secret "<secret>" -Snapshot snapshot.txt -Report run.txt -TimeoutSec 7200
    ```
-5. **Verify**: modes `ПРОВЕРКА` (`-Rules ... -Snapshot snapshot.txt`) and `ОСТАТКИ`. Then hand the copy to the AI agent and delete the snapshot and the secret.
+5. **Verify**: modes `ПРОВЕРКА` (`-Rules ... -Snapshot snapshot.txt`) and `ОСТАТКИ`. Then hand the copy to the AI agent and delete the snapshot. Delete the secret too, or keep it with a responsible person (never in the copy or with the AI) if you will need reconciliation.
+6. **Reconcile copy → production.** A developer reports a problem with IIN `720903353397` from the copy: the responsible person runs the read-only `СВЕРКА` mode on the **production** database with the same secret and rules (`-Mode СВЕРКА -Rules ... -Secret ... -File from_copy.txt -Report sverka.txt`) and gets the real value and object. The report holds real data and is for humans only.
 
 For another platform version pass `-Platform "C:\Program Files\1cv8\<version>\bin\1cv8.exe"`.
 If the platform asks "Allow opening this file?", run the `ЗАЩИТА` mode once (copies only).
@@ -97,9 +98,10 @@ A 1C external data processor run from the command line on a copy of a file datab
 | `ПРОВЕРКА` (verify) | Against a snapshot of hashes of the original values: none may remain; every synthetic IIN and IBAN has a valid check; all users are depersonalized |
 | `ОСТАТКИ` (leftovers) | Searches ALL string attributes and tabular sections (not just the rules) for values that look like IIN/BIN, KZ IBAN, e-mail |
 | `СНИМОК` (snapshot) | Read only: writes hashes of the original values per rules (run on a copy before replacement if the snapshot was lost) |
+| `СВЕРКА` (reconcile) | Read only, run on the **production** database: values from the copy (`ФАЙЛ`, one per line) are found by recomputing the replacement with the same `СЕКРЕТ` and `ПРАВИЛА`; the report shows the real value and object |
 | `ЗАЩИТА` (protection) | Test copies only (`_test` in the path): turns off the unsafe-action warning for the database users |
 | `САМОПРОВЕРКА` (self-test) | Samples and a mass check of the generators (1000 values each of IIN, BIN, IBAN, INN 10/12, SNILS) |
-| `ОДАТА`, `ОДАТАСБРОС`, `КАНАРЕЙКИ`, `УДАЛИТЬКАНАРЕЙКИ` | For live gateway checks: enable / clear the standard OData interface for catalogs, plant canaries from JSON, delete them |
+| `ОДАТА`, `ОДАТАСБРОС`, `КАНАРЕЙКИ`, `УДАЛИТЬКАНАРЕЙКИ` | For live gateway checks: enable (counterparties and individuals, or objects listed in `ОБЪЕКТЫ` by full name) / clear the standard OData interface, plant canaries from JSON, delete them |
 | `ПОЛЬЗОВАТЕЛИ` (users) | Replaces logins, full names and passwords of database users and the names of "Users" catalog items (except the ones kept); `ПРОВЕРКАПОЛЬЗОВАТЕЛЕЙ` only checks |
 
 Values are replaced deterministically (HMAC-SHA256 with a per-run secret): one original identifier always becomes the same synthetic one, so references and matches between catalogs and documents survive. Writes use `ОбменДанными.Загрузка`, in batches of 500; open transactions are rolled back on error.
