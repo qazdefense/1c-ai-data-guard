@@ -66,7 +66,7 @@
 2. **Опишите политику**: какие наборы и поля видит ИИ. Черновик строит генератор по правилам обезличивания и `$metadata` вашей публикации:
    ```
    set ODATA_USER=... & set ODATA_PASSWORD=...
-   py -m gateway.make_policy --rules 1cules\kz.txt --url http://localhost/<публикация>/odata/standard.odata --profile kz --entities Catalog_Номенклатура --pass Catalog_Номенклатура.Description --out my.policy.json
+   py -m gateway.make_policy --rules 1c\rules\kz.txt --url http://localhost/<публикация>/odata/standard.odata --profile kz --entities Catalog_Номенклатура --pass Catalog_Номенклатура.Description --out my.policy.json
    ```
    Он безопасен по умолчанию: поля из правил (ИИН, счета, имена) - токенами, числа, даты и ссылки - как есть, **все остальные строки (комментарии, адреса, телефоны) исключены**, пока вы не разрешите их через `--pass`. В замечаниях выводится, что исключено и какие наборы не опубликованы в OData. Прочитайте результат перед запуском. Вручную - начните с `gateway/examples/kz.policy.json` или `ru.policy.json`, в
    `upstream.base_url` укажите адрес публикации. Поля с персональными данными - `token:<класс>`, прочие - `pass`. Чего нет в политике,
