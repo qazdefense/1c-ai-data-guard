@@ -46,6 +46,25 @@ class GateBehaviourTests(unittest.TestCase):
         self.assertEqual((status, len(body["value"])), (200, 1))
         self.assertTrue(any(self.data["rows"][0][IIN_FIELD] in urllib.parse.unquote(s) for s in self.seen))
 
+    def test_make_policy_is_safe_by_default(self):
+        from gateway import make_policy
+        rules = make_policy.parse_rules(["# c", "Справочник.Контрагенты|ИдентификационныйКодЛичности|идентификатор",
+                                         "Справочник.Контрагенты|Наименование|наименование", "Справочник.Контрагенты|Комментарий|текст",
+                                         "Справочник.Контрагенты.Контакты|Телефон|контакт", "Документ.Реализация|Контрагент|зерно"], "kz")
+        self.assertEqual(rules, {"Catalog_Контрагенты": {"ИдентификационныйКодЛичности": "iin", "Description": "name"}})
+        xml = ('<Edmx xmlns="x"><Schema xmlns="y"><EntityType Name="Catalog_Контрагенты"><Property Name="Ref_Key" Type="Edm.Guid"/>'
+               '<Property Name="Description" Type="Edm.String"/><Property Name="ИдентификационныйКодЛичности" Type="Edm.String"/>'
+               '<Property Name="Комментарий" Type="Edm.String"/><Property Name="Телефон" Type="Edm.String"/><Property Name="ДатаСоздания" Type="Edm.DateTime"/>'
+               '</EntityType><EntityType Name="Catalog_Номенклатура"><Property Name="Ref_Key" Type="Edm.Guid"/><Property Name="Description" Type="Edm.String"/>'
+               '</EntityType></Schema></Edmx>')
+        policy, notes = make_policy.build_policy(rules, make_policy.parse_metadata(xml), "kz", ["Catalog_Номенклатура.Description"], ["Catalog_Номенклатура"])
+        fields = policy["entities"]["Catalog_Контрагенты"]["fields"]
+        self.assertEqual(fields, {"Ref_Key": "pass", "Description": "token:name", "ИдентификационныйКодЛичности": "token:iin", "ДатаСоздания": "pass"})
+        self.assertNotIn("Комментарий", fields)  # свободный текст по умолчанию исключен
+        self.assertEqual(policy["entities"]["Catalog_Номенклатура"]["fields"]["Description"], "pass")  # только по явному --pass
+        self.assertTrue(any("Комментарий" in n for n in notes))
+        Policy(policy)  # итог проходит проверку политики шлюза
+
     def test_catalog_lists_allowed_entities_and_field_modes_without_values(self):
         status, body = self.get("/")
         self.assertEqual(status, 200)
