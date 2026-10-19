@@ -78,6 +78,11 @@ class Gate:
         path = urllib.parse.unquote(parts.path)
         if ".." in path or "//" in path or "\\" in path:
             raise GateError(400, "Недопустимый путь")
+        if path == "/":
+            # каталог для ИИ-клиента: что разрешено политикой (только имена, значений нет)
+            entry["entity"] = "(каталог)"
+            return {"entities": {name: {"fields": {f: ("token" if mode.startswith("token:") else "pass") for f, mode in fields.items()}}
+                                 for name, fields in self.policy.entities.items()}}
         m = PATH_RE.match(path)
         if not m:
             raise GateError(404, "Запрос не разрешен политикой")

@@ -46,6 +46,41 @@ class GateBehaviourTests(unittest.TestCase):
         self.assertEqual((status, len(body["value"])), (200, 1))
         self.assertTrue(any(self.data["rows"][0][IIN_FIELD] in urllib.parse.unquote(s) for s in self.seen))
 
+    def test_catalog_lists_allowed_entities_and_field_modes_without_values(self):
+        status, body = self.get("/")
+        self.assertEqual(status, 200)
+        fields = body["entities"][ENTITY]["fields"]
+        self.assertEqual(fields[IIN_FIELD], "token")
+        self.assertEqual(fields["Ref_Key"], "pass")
+        self.assertNotIn(self.data["rows"][0][IIN_FIELD], json.dumps(body, ensure_ascii=False))
+
+    def test_mcp_tools_go_only_through_gateway(self):
+        from gateway import mcp_server
+
+        def fetch(target):
+            status, body = self.gate.handle("GET", target)
+            return status, body
+
+        init = mcp_server.handle_message({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}}, fetch)
+        self.assertEqual(init["result"]["serverInfo"]["name"], "1c-ai-data-guard")
+        self.assertIsNone(mcp_server.handle_message({"jsonrpc": "2.0", "method": "notifications/initialized"}, fetch))
+        names = [t["name"] for t in mcp_server.handle_message({"jsonrpc": "2.0", "id": 2, "method": "tools/list"}, fetch)["result"]["tools"]]
+        self.assertEqual(names, ["describe_data", "query_data"])
+
+        def call(name, args):
+            reply = mcp_server.handle_message({"jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": {"name": name, "arguments": args}}, fetch)
+            return reply["result"]
+
+        described = call("describe_data", {})
+        self.assertFalse(described["isError"])
+        ok = call("query_data", {"entity": ENTITY, "top": 2, "skip": 0})
+        self.assertFalse(ok["isError"])
+        self.assertRegex(ok["content"][0]["text"], r"\[\[iin:[A-Z2-7]{10}\]\]")
+        self.assertNotIn(self.data["rows"][0][IIN_FIELD], ok["content"][0]["text"])
+        real = call("query_data", {"entity": ENTITY, "filter": "%s eq '%s'" % (IIN_FIELD, self.data["rows"][0][IIN_FIELD])})
+        self.assertTrue(real["isError"])  # реальный ИИН искать нельзя и через MCP
+        self.assertIn("Ref_Key", mcp_server.build_query_path({"entity": "X", "skip": 100}))  # страницы - с сортировкой
+
     def test_reveal_restores_values_only_with_gateway_secret(self):
         from gateway.reveal import reveal
         row = self.get(f"/{E}")[1]["value"][0]
